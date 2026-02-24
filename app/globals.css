@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+body {
+  overflow-x: hidden;
+}
+
+/* We rely completely on Tailwind utility classes in layout.tsx for colors now */
