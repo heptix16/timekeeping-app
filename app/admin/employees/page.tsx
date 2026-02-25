@@ -236,10 +236,10 @@ export default async function EmployeeHRPage({
               className="space-y-4 max-w-md"
             >
               <input
-                type="hidden"
-                name="employeeId"
-                value={selectedEmployeeId}
-              />
+  type="hidden"
+  name="employeeId"
+  value={selectedEmployeeId ?? ''}
+/>
 
               <select
                 name="leaveType"
