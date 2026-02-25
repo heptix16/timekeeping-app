@@ -197,6 +197,71 @@ export async function adjustLeaveBalance(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (!user) return
+
+  const { data: adminProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (adminProfile?.role !== 'admin') return
+
+  const employeeId = formData.get('employeeId') as string
+  const leaveType = formData.get('leaveType') as string
+  const amountRaw = formData.get('amount') as string
+  const reason = formData.get('reason') as string
+
+  const amount = Number(amountRaw)
+
+  if (!employeeId || !leaveType || isNaN(amount)) return
+
+  const { data: empProfile } = await supabase
+    .from('profiles')
+    .select('vl_balance, sl_balance')
+    .eq('id', employeeId)
+    .single()
+
+  if (!empProfile) return
+
+  let newVL = empProfile.vl_balance
+  let newSL = empProfile.sl_balance
+
+  if (leaveType === 'VL') {
+    newVL = empProfile.vl_balance + amount
+    if (newVL < 0) return
+  }
+
+  if (leaveType === 'SL') {
+    newSL = empProfile.sl_balance + amount
+    if (newSL < 0) return
+  }
+
+  await supabase
+    .from('profiles')
+    .update({
+      vl_balance: newVL,
+      sl_balance: newSL,
+    })
+    .eq('id', employeeId)
+
+  await supabase
+    .from('leave_transactions')
+    .insert({
+      employee_id: employeeId,
+      leave_type: leaveType,
+      amount: amount,
+      reference: reason || 'Manual Adjustment',
+    })
+
+  revalidatePath('/admin/employees')
+}
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) return { error: 'Not authenticated' }
 
   const { data: adminProfile } = await supabase
